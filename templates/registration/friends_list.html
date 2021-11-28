@@ -1,0 +1,12 @@
+<div>
+  <h3>All friends</h3>
+  <div>
+    {% if friends %}
+    <span></span>
+    {% for friend in friends %}
+    <div>
+      <a href="{% url 'profile' friend.id %}">{{ friend.username }}</a>
+    </div>
+    {% endfor %} {% endif %}
+  </div>
+</div>

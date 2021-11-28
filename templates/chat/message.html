@@ -1,0 +1,38 @@
+{% extends 'base.html' %} {% block content %}
+<h2>message me</h2>
+<div>
+  <!-- {% if chat2 %}
+  <span></span>
+
+  {% for chat in chat2 %}
+  <p>{{chat.body }}</strong></p>
+  {% endfor %} {% endif %} -->
+</div>
+<div>
+  {% if chat1 %}
+  <span></span>
+
+  {% for chat in chat1 %}
+  <span></span>
+  {%if chat.sender.id == request.user.id %}
+  <div style="float: right; color: brown; height: 1em;">
+    <p>{{chat.body }} -<strong>you</strong></p>
+  </div>
+  <br clear="all" />
+  {% else %}
+  <div style=" height: 1em;">
+    <p>{{chat.body }}</p>
+  </div>
+  {% endif %}
+  <span></span>
+  {% endfor %} {% endif %}
+</div>
+<br clear="all" />
+<div>
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <input type="submit" value="send" />
+  </form>
+</div>
+
+{% endblock %}

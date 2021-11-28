@@ -1,0 +1,55 @@
+{% extends 'base.html' %} {% block content %}
+<span></span>
+{% load static %} {% load humanize%}
+<div>
+  <h3>Profile</h3>
+  {% if user.id == request.user.id %}
+  <a href="{% url 'profile_update' request.user.id %}">Update Profile</a>
+  {% endif %}
+  <h3>{{ user.username }}</h3>
+  <img
+    style="width: 200px; display: flex; float: right;"
+    src="{{ user.avater.url }}"
+  />
+  <br clear="all" />
+  <div>
+    <small> joined {{user.date_joined|naturaltime}} </small>
+    <p>Last login was {{user.last_login|naturaltime}}</p>
+  </div>
+
+  {% if user.name is not None%}
+  <h2>{{ user.name }}</h2>
+  {% endif%}
+  <div>
+    <p>
+      You have {{user.friend.friends.all|length}} friends
+    </p>
+    <a href="{% url 'all_friends' user.id %}">Friends</a>
+  </div>
+
+  <div>
+    <a href="{% url 'chat:message' user.id %}">Message</a>
+    {% if request.user != user %}
+    <div>
+      <form action="{% url 'add_friend' user.id %}" method="POST">
+        {% csrf_token %}
+        <input type="submit" value="Send friend request" />
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  <div>{{user.follower.followers.all|length}} followers</div>
+
+  <div style="display: inline-flex;">
+    <form action="{% url 'follow' user.id %}" method="POST">
+      {% csrf_token %}
+      <input type="submit" value="follow" />
+    </form>
+    <form action="{% url 'unfollow' user.id %}" method="POST">
+      {% csrf_token %}
+      <input type="submit" value="unfollow" />
+    </form>
+  </div>
+</div>
+
+{% endblock %}
