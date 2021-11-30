@@ -1,28 +1,24 @@
 from rest_framework import serializers
 from accounts.models import User, Follower
-from post.models import Post, Comment
+from post.models import Post, Comment, Like
 
 from django.shortcuts import get_object_or_404
 
-class FollowerSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField()
-    followers_id = serializers.IntegerField()
-    class Meta:
-        model = Follower
-        fields = ['user_id', 'followers_id']
-    
-    def create(self, validate_date):
-        user = get_object_or_404(User, id=validate_date['user_id'])
-        follower = get_object_or_404(User, id=validate_date['followers_id'])
-        obj, created = Follower.objects.get_or_create(user=user)
-        obj.followers.add(follower)
-        return obj
+
     
 class UserSerializer(serializers.ModelSerializer):
     followers = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    friends = serializers.StringRelatedField(many=True, read_only=True)
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'followers']
+        fields = ['id', 'username', 'email', 'name', 'bio', 
+        'avater', 'date_of_birth', 'phone_number', 'gender', 'followers', 'friends']
+
+class PasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=110, write_only=True)
+    class Meta:
+        fields = ['password']
+
 
 class UserCreationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,32 +32,23 @@ class UserCreationSerializer(serializers.ModelSerializer):
         return user
 
 
-
-
 class PostSerializer(serializers.ModelSerializer):
-    comment = serializers.PrimaryKeyRelatedField(many=True, read_only=True) 
+    comment = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    like = serializers.PrimaryKeyRelatedField(many=True, source='like.liker', read_only=True)
+
     class Meta:
         model = Post
-        fields = ['id', 'title', 'body', 'image', 'created_at', 'updated_at', 'like_set', 'comment']
-
+        fields = ['id', 'title', 'body', 'image', 'created_at', 'updated_at', 'is_deleted', 'owner', 'like', 'comment']
+        extra_kwargs = {'owner':{'read_only': True}}
 class CommentCreateSerializer(serializers.ModelSerializer):
-    post_id = serializers.IntegerField()
-    comment_user_id = serializers.IntegerField(allow_null=True)
     class Meta:
         model = Comment
-        fields = ['body', 'post_id', 'comment_user_id']
-        read_only_fields = ['comment_user_id']
-        
-
-    def create(self, validata_data):
-        post = get_object_or_404(Post, id=validata_data['post_id'])
-        comment_user = get_object_or_404(User, id=validata_data['comment_user_id'])
-        comment = Comment.objects.create(body=validata_data['body'], 
-        post=post, comment_user=comment_user)
-        return comment
+        fields = ['body']
+    
 
 class CommentSerializer(serializers.ModelSerializer):
+    commentlike = serializers.PrimaryKeyRelatedField(many=True, source='commentlike.comment_liker', read_only=True)
     class Meta:
         model = Comment
-        fields = ['id', 'body', 'created_at','post', 'comment_user', 'commentlike_set']
-       
+        fields = ['id', 'body', 'created_at','post', 'is_deleted', 'comment_user', 'commentlike']
+        extra_kwargs = {'commentlike_set':{'read_only': True}, 'post':{'read_only': True}, 'comment_user': {'read_only': True}}

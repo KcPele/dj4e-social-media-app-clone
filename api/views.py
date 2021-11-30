@@ -4,47 +4,118 @@ from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from accounts.models import (
     User,
     Follower,
+    Friend
 )
-from post.models import Post, Comment
-from .permissions import IsOwnerOrReadOnly, IsCommentOwnerOrReadOnly
+
+from post.models import (
+    Post, 
+    Comment,
+    CommentLike,
+)
+from .permissions import (
+    IsOwnerOrReadOnly, 
+    IsCommentOwnerOrReadOnly,
+    IsOwnerUserOrReadOnly,
+)
 from api.serializers import (
     UserCreationSerializer,
     PostSerializer, 
     UserSerializer,
-    FollowerSerializer,
+    PasswordSerializer,
     CommentSerializer,
     CommentCreateSerializer,
 )
 
-class AllApiRoute(APIView):
-    def get(self, request):
-        routes = [
-            'GET: /api/',
-            'POST: /register/',
-            'POST: /token/',
-            'POST: /token/refresh/',
-            'GET: /users/',
-            'GET: /users/id/',
-            'RETRIEVE, UPDATE: /profile/id/',
-            'GET, POST: /followers/id/',
+# class AllApiRoute(APIView):
+#     def get(self, request):
+#         pass
+#         routes = [
+#             'GET: /api/',
+#             'POST: /register/',
+#             'POST: /token/',
+#             'POST: /token/refresh/',
+#             'GET: /users/',
+#             'RETRIEVE, UPDATE: /users/id/',
+#             'UPDATE: /users/id/change_password/',
+#             'POST: /users/id/follow/',
+#             'DELETE: /users/id/unfollow/',
+#             'POST: /users/id/addfriend/',
            
-            'GET, POST: /posts/',
-            'RETRIEVE, DELETE, UPDATE: /posts/id/',
-            'POST: /create-comments/',
-            'RETRIEVE, DELETE, UPDATE: /comments/id/',
-            'POST: /like_comment/',
+#             'GET, POST: /posts/',
+#             'RETRIEVE, UPDATE, DELETE: /posts/id/',
+#             'POST: /posts/id/comment/',
+#             'RETRIEVE, UPDATE, DELETE: /comments/id/',
+#             'POST: /comment/id/likecomment/',
+#             'POST: /comment/id/unlikecomment/',
             
             
-        ]
-        return Response(routes)
-   
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+#         ]
+#         return Response(routes)
+
+class CustomViewSet(viewsets.ViewSet):
+    def list(self, request):
+        serializer = self.serializer_class(self.queryset, many=True)
+        return Response(serializer.data)
+    def retrieve(self, request, pk=None):
+        user = get_object_or_404(self.queryset, pk=pk)
+        serializer = self.serializer_class(user)
+        return Response(serializer.data)
+    def update(self, request, pk=None):
+        user = get_object_or_404(self.queryset, pk=pk)
+        serializer = self.serializer_class(user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+class UserViewSet(CustomViewSet):
+    
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerUserOrReadOnly]
+    
+
+    #for user password change
+    @action(detail=True, methods=['post'], url_path='change_password', 
+    permission_classes=[permissions.IsAuthenticated, IsOwnerUserOrReadOnly])
+    def set_password(self, request, pk=None):
+        user = get_object_or_404(self.queryset, pk=pk)
+        serializer = PasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data['password'])
+        user.save()
+        return Response({'status':'password set'})
+    
+    ##for followers
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def follow(self, request, pk=None):
+        follower = get_object_or_404(self.queryset, pk=pk)
+        obj, created = Follower.objects.get_or_create(user=request.user)
+        obj.followers.add(follower)
+        return Response({'status':'you just followed ...'})
+
+    #to unfollow 
+    @action(detail=True, methods=['delete'], permission_classes=[permissions.IsAuthenticated])
+    def unfollow(self, request, pk=None):
+        follower = get_object_or_404(self.queryset, pk=pk)
+        Follower.objects.get(user=request.user, followers=follower).delete()
+        return Response({'status':'you unfollowed'})
+    
+    #adding a friend/ sending friend request
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def addfriend(self, request, pk=None):
+        friend_user = get_object_or_404(self.queryset, pk=pk)
+        obj, created = Friend.objects.get_or_create(owner=friend_user)
+        obj.friends.add(request.user)
+        return Response({'status':'now your friend'})
+
+
+
 
 class CreateUserApi(generics.CreateAPIView):
     serializer_class = UserCreationSerializer
@@ -53,15 +124,6 @@ class CreateUserApi(generics.CreateAPIView):
         serializers.is_valid(raise_exception=True)
         serializers.save()
         return Response(serializers.data)
-
-class FollowerCreateView(generics.CreateAPIView):
-    serializer_class = FollowerSerializer
-    def post(self, request):
-        serializers = self.get_serializer(data=request.data)
-        serializers.is_valid(raise_exception=True)
-        serializers.save()
-        return Response(serializers.data)
-
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -72,25 +134,40 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-class CommentCreateView(generics.CreateAPIView):
-    
-    serializer_class = CommentCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    def post(self, request):
-        data = request.data
-        
-        
-        serializers = self.get_serializer(data=request.data)
-       
-        serializers.is_valid(raise_exception=True)
-        print(serializers)
-        serializers.save(comment_user_id=request.user.id)
-        return Response(serializers.data)
 
-class CommentViewSet(viewsets.ModelViewSet):
+
+    ##liking a post
+
+    ##Unlike a post
     
+    #creating comments for a post
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def comment(self, request, pk=None):
+        post = get_object_or_404(self.queryset, pk=pk)
+        comment_user = get_object_or_404(User, id=request.user.id)
+        serializer = CommentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = Comment.objects.create(body=serializer.validated_data['body'],
+         post=post, comment_user=comment_user)
+        return Response({
+            'comment': CommentSerializer(comment, 
+            context=self.get_serializer_context()).data
+            })
+
+
+
+
+class CommentViewSet(CustomViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCommentOwnerOrReadOnly]
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    
+    #like comments
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def likecomment(self, request, pk=None):
+        com = get_object_or_404(self.queryset, id=pk)
+        obj, created = CommentLike.objects.get_or_create(comment=com)
+        obj.comment_liker.add(request.user)
+        return Response({'status':'you just liked a comment'})
+    
+    #unlike a comment

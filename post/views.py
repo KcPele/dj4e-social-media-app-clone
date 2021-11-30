@@ -58,15 +58,16 @@ class PostDeleteView(DeleteView):
         return qs.filter(owner=self.request.user)
 
 
-class LikeAddView(LoginRequiredMixin, View):
+class LikePostView(LoginRequiredMixin, View):
     def post(self, request):
         post_id = request.POST['post_id']
         post = get_object_or_404(Post, id=post_id)
         user = get_object_or_404(User, id=request.user.id)
-        obj, created = Like.objects.get_or_create(post=post, liker=user)
+        obj, created = Like.objects.get_or_create(post=post)
+        obj.liker.add(user)
         return redirect(reverse_lazy('post:post'))
 
-class LikeDeleteView(LoginRequiredMixin, View):
+class UnLikePostView(LoginRequiredMixin, View):
     def post(self, request):
         post_id = request.POST['post_id']
         post = get_object_or_404(Post, id=post_id)
@@ -86,9 +87,7 @@ class PostComment(LoginRequiredMixin, View):
             form.post = post
             form.comment_user = request.user
             form.save()
-        
-        
-        return redirect(reverse('post:detail', args=[post_id]))
+        return redirect(reverse_lazy('post:detail', args=[post_id]))
 
 
 class DeleteComment(DeleteView):
@@ -103,8 +102,8 @@ class LikeCommentView(LoginRequiredMixin, View):
         comment_id = request.POST['comment_id']
         comment = get_object_or_404(Comment, id=comment_id)
         user = get_object_or_404(User, id=request.user.id)
-        print(post_id)
-        obj, created = CommentLike.objects.get_or_create(comment=comment, commenter=user)
+        obj, created = CommentLike.objects.get_or_create(comment=comment)
+        obj.commenter.add(user)
         return redirect(reverse_lazy('post:detail', args=[post_id]))
 
 class UnLikeCommentView(LoginRequiredMixin, View):

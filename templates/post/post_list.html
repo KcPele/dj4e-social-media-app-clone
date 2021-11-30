@@ -19,7 +19,7 @@
         {% endif %}
         <h3><a href="{% url 'post:detail' obj.id%}">{{obj.title }}</a></h3>
         <p>{{obj.body }}</p>
-        <p>It has {{obj.like_set.all|length}} likes</p>
+        <p>It has {{obj.like.liker.all|length}} likes</p>
         <p>{{obj.comment.all|length}} comment</p>
         {% if request.user.is_authenticated %}
         <div style="display:inline-flex ;">

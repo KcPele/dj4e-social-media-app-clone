@@ -37,7 +37,7 @@
         by {{comment.created_at|naturaltime}}</small
       >
       <span>{{comment.body}}</span>
-      <p>It has {{comment.commentlike_set.all|length}} likes</p>
+      <p>It has {{comment.commentlike.comment_liker.all|length}} likes</p>
       <div>
         {% if request.user.is_authenticated %}
         <small style="display:inline-flex ;">

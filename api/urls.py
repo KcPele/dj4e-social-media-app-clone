@@ -6,13 +6,12 @@ from rest_framework_simplejwt.views import (
 )
 
 from .views import (
-    AllApiRoute,
+    # AllApiRoute,
     CreateUserApi,
     UserViewSet,
-    FollowerCreateView,
+
     ##post
     PostViewSet,
-    CommentCreateView,
     CommentViewSet,
 )
 
@@ -24,16 +23,10 @@ router.register(r'comments', CommentViewSet )
 
 app_name = 'api'
 urlpatterns = [
-    path('', AllApiRoute.as_view(), name='home'),
+    # path('', AllApiRoute.as_view(), name='home'),
     path('register/', CreateUserApi.as_view(), name='register'),
-    path('follower/', FollowerCreateView.as_view(), name='follower'),
-
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-
-    path('create-comment/', CommentCreateView.as_view()),
-    ##post
-    # path('post/', ListPost.as_view(), name='post'),
     path('', include(router.urls)),
 ]

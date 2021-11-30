@@ -9,8 +9,8 @@ from post.views import (
     PostDetailView,
     PostUpdateView,
     PostDeleteView,
-    LikeAddView,
-    LikeDeleteView,
+    LikePostView,
+    UnLikePostView,
     #comment
     PostComment,
     DeleteComment,
@@ -28,8 +28,8 @@ urlpatterns = [
     path('delete/<str:pk>/', PostDeleteView.as_view(), name="delete"),
 
     ##likes
-    path('like/', LikeAddView.as_view(), name='like'),
-    path('unlike/', LikeDeleteView.as_view(), name='unlike'),
+    path('like/', LikePostView.as_view(), name='like'),
+    path('unlike/', UnLikePostView.as_view(), name='unlike'),
 
     ##comment
     path('post-comment/', PostComment.as_view(), name="comment"),

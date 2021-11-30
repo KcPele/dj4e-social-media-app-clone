@@ -19,12 +19,12 @@ class Post(models.Model):
     def get_absolute_url(self):
         return reverse_lazy('post:post')
 class Like(models.Model):
-    post = models.ForeignKey(Post,  on_delete=models.CASCADE)
-    liker = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.OneToOneField(Post, on_delete=models.CASCADE)
+    liker = models.ManyToManyField(User, related_name='liker')
     liked_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.liker.username
+        return self.post.title
 
 
 class Comment(models.Model):
@@ -35,15 +35,15 @@ class Comment(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.comment_user
+        return self.comment_user.username
 
 class CommentLike(models.Model):
-    comment = models.ForeignKey(Comment,  on_delete=models.CASCADE)
-    commenter = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.OneToOneField(Comment,  on_delete=models.CASCADE)
+    comment_liker = models.ManyToManyField(User)
     commented_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return  self.commenter.username
+        return  self.comment.post.title
 
 
 ##Not yet implemented
@@ -64,9 +64,9 @@ class CommentReply(models.Model):
 
 
 ###signals
-# @receiver(post_save, sender=Post)
-# def my_signal(sender, instance, created=True, **kwargs):
+@receiver(post_save, sender=Post)
+def my_signal(sender, instance, created, *args, **kwargs):
     
-#     print(instance.title)
-#     return 'nice'
+    print(instance.title)
+    
 

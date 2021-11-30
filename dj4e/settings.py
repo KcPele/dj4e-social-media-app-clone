@@ -32,7 +32,9 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'chat',
+    
     'api',
+    'notifications',
 
     'django.contrib.humanize',
 ]
