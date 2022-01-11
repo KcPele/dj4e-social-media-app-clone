@@ -18,6 +18,9 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         return reverse_lazy('post:post')
+    
+    class Meta:
+        ordering = ['-created_at']
 class Like(models.Model):
     post = models.OneToOneField(Post, on_delete=models.CASCADE)
     liker = models.ManyToManyField(User, related_name='liker')

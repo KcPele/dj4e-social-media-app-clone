@@ -23,4 +23,6 @@ urlpatterns = [
     path('', include('post.urls')),
     path('chat/', include('chat.urls')),
     path('api-auth/', include('rest_framework.urls')),
+    ### quizes urls
+    path('quiz/', include('quizes.urls', namespace='quiz')),
 ]

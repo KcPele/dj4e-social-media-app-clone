@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from django.views import View
 from django.views.generic import ( 
     ListView, 
@@ -22,10 +23,25 @@ class OwnerUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(owner=self.request.user)
-class PostListView(ListView):
-    model = Post
-    def get_ordering(self):
-        return '-created_at'
+
+
+class PostListView(View):
+    def get(self, request):
+        query = request.GET.get('qs')
+        if query:
+            qs = Post.objects.filter(Q(title__icontains=query) |
+            Q(body__icontains=query))
+
+            context = {
+                'object_list': qs
+            }
+            return render(request, 'post/post_list.html', context)
+
+        posts = Post.objects.all()
+        context = {
+            'object_list':posts
+        }
+        return render(request, 'post/post_list.html', context)
 
        
         

@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     'notifications',
 
     'django.contrib.humanize',
+
+    ### quize apps
+    'quizes',
+    'questions',
+    'results'
 ]
 
 MIDDLEWARE = [
@@ -157,6 +162,10 @@ USE_TZ = True
 LOGIN_REDIRECT_URL = '/'
 
 STATIC_URL = '/static/'
+STATICFILES_DIRRS = [
+    BASE_DIR / 'static',
+    BASE_DIR / 'quizes' / 'static',
+]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
